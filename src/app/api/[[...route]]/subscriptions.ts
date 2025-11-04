@@ -11,6 +11,11 @@ import { subscriptions } from "@/db/schema";
 
 const app = new Hono()
   .post("/billing", verifyAuth(), async (c) => {
+    // Return error if Stripe is not configured
+    if (!stripe) {
+      return c.json({ error: "Stripe is not configured" }, 503);
+    }
+
     const auth = c.get("authUser");
 
     if (!auth.token?.id) {
@@ -54,11 +59,16 @@ const app = new Hono()
     return c.json({
       data: {
         ...subscription,
-        active,
+        active: stripe ? active : true, // If Stripe is disabled, treat as active
       },
     });
   })
   .post("/checkout", verifyAuth(), async (c) => {
+    // Return error if Stripe is not configured
+    if (!stripe) {
+      return c.json({ error: "Stripe is not configured" }, 503);
+    }
+
     const auth = c.get("authUser");
 
     if (!auth.token?.id) {
@@ -94,6 +104,11 @@ const app = new Hono()
   .post(
     "/webhook",
     async (c) => {
+      // Return error if Stripe is not configured
+      if (!stripe) {
+        return c.json({ error: "Stripe is not configured" }, 503);
+      }
+
       const body = await c.req.text();
       const signature = c.req.header("Stripe-Signature") as string;
 
