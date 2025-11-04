@@ -56,10 +56,7 @@ export default {
           return null;
         }
 
-        const passwordsMatch = await bcrypt.compare(
-          password,
-          user.password,
-        );
+        const passwordsMatch = await bcrypt.compare(password, user.password);
 
         if (!passwordsMatch) {
           return null;
@@ -67,13 +64,19 @@ export default {
 
         return user;
       },
-    }), 
-    GitHub, 
-    Google
+    }),
+    GitHub({
+      clientId: process.env.AUTH_GITHUB_ID!,
+      clientSecret: process.env.AUTH_GITHUB_SECRET!,
+    }),
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    }),
   ],
   pages: {
     signIn: "/sign-in",
-    error: "/sign-in"
+    error: "/sign-in",
   },
   session: {
     strategy: "jwt",
@@ -88,10 +91,10 @@ export default {
     },
     jwt({ token, user }) {
       if (user) {
-        token.id = user.id;  
+        token.id = user.id;
       }
 
       return token;
-    }
+    },
   },
-} satisfies NextAuthConfig
+} satisfies NextAuthConfig;
