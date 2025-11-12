@@ -11,17 +11,25 @@ import { subscriptions } from "@/db/schema";
 
 const app = new Hono()
   .post("/billing", verifyAuth(), async (c) => {
-    const auth = c.get("authUser");
+    try {
+      const auth = c.get("authUser");
 
-    if (!auth.token?.id) {
-      return c.json({ error: "Unauthorized" }, 401);
+      if (!auth.token?.id) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+
+      // Simply redirect to the billing page
+      // We don't need Razorpay to be configured for viewing billing details
+      // Use relative URL if NEXT_PUBLIC_APP_URL is not set
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+      const billingUrl = baseUrl ? `${baseUrl}/billing` : "/billing";
+
+      return c.json({ data: billingUrl });
+    } catch (error) {
+      console.error("Billing endpoint error:", error);
+      // Return relative URL as fallback
+      return c.json({ data: "/billing" });
     }
-
-    // Simply redirect to the billing page
-    // We don't need Razorpay to be configured for viewing billing details
-    const billingUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/billing`;
-
-    return c.json({ data: billingUrl });
   })
   .get("/current", verifyAuth(), async (c) => {
     const auth = c.get("authUser");
