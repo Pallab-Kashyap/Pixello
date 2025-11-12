@@ -25,19 +25,34 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 export default async function BillingPage() {
-  const session = await auth();
+  let session;
+  let subscription;
+  let isActive = false;
 
-  if (!session?.user?.id) {
+  try {
+    session = await auth();
+
+    if (!session?.user?.id) {
+      redirect("/sign-in");
+    }
+
+    // Fetch subscription details with error handling
+    try {
+      const [sub] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, session.user.id));
+
+      subscription = sub;
+      isActive = subscription ? checkIsActive(subscription) : false;
+    } catch (dbError) {
+      console.error("Database error fetching subscription:", dbError);
+      // Continue with isActive = false
+    }
+  } catch (authError) {
+    console.error("Auth error:", authError);
     redirect("/sign-in");
   }
-
-  // Fetch subscription details
-  const [subscription] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, session.user.id));
-
-  const isActive = subscription ? checkIsActive(subscription) : false;
 
   const proFeatures = [
     {

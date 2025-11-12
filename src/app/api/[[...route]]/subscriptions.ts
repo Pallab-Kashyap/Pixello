@@ -11,29 +11,15 @@ import { subscriptions } from "@/db/schema";
 
 const app = new Hono()
   .post("/billing", verifyAuth(), async (c) => {
-    // Return error if Razorpay is not configured
-    if (!razorpay) {
-      return c.json({ error: "Razorpay is not configured" }, 503);
-    }
-
     const auth = c.get("authUser");
 
     if (!auth.token?.id) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
-    const [subscription] = await db
-      .select()
-      .from(subscriptions)
-      .where(eq(subscriptions.userId, auth.token.id));
-
-    if (!subscription) {
-      return c.json({ error: "No subscription found" }, 404);
-    }
-
-    // Razorpay doesn't have a billing portal like Stripe
-    // You can redirect to your custom billing management page
-    const billingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/billing`;
+    // Simply redirect to the billing page
+    // We don't need Razorpay to be configured for viewing billing details
+    const billingUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/billing`;
 
     return c.json({ data: billingUrl });
   })
