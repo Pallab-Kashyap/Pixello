@@ -5,7 +5,8 @@ import { InferRequestType, InferResponseType } from "hono";
 import { client } from "@/lib/hono";
 
 type ResponseType = InferResponseType<
-  (typeof client.api.ai)["remove-bg"]["$post"]
+  (typeof client.api.ai)["remove-bg"]["$post"],
+  200
 >;
 type RequestType = InferRequestType<
   (typeof client.api.ai)["remove-bg"]["$post"]
