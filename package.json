@@ -14,6 +14,7 @@
   "dependencies": {
     "@auth/core": "^0.34.1",
     "@auth/drizzle-adapter": "^1.4.1",
+    "@google/generative-ai": "^0.24.1",
     "@hono/auth-js": "^1.0.10",
     "@hono/zod-validator": "^0.2.2",
     "@neondatabase/serverless": "^0.9.4",
@@ -43,6 +44,7 @@
     "next": "14.2.4",
     "next-auth": "^5.0.0-beta.19",
     "next-themes": "^0.3.0",
+    "razorpay": "^2.9.6",
     "react": "^18",
     "react-color": "^2.19.3",
     "react-dom": "^18",
@@ -50,7 +52,6 @@
     "react-use": "^17.5.0",
     "replicate": "^0.31.1",
     "sonner": "^1.5.0",
-    "stripe": "^16.2.0",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "unsplash-js": "^7.0.19",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
+import Script from "next/script";
 
 import { SubscriptionAlert } from "@/features/subscriptions/components/subscription-alert";
 
@@ -14,7 +15,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "The Canvas",
+  title: "Pixello",
   description: "Build Something Great!",
 };
 
@@ -29,6 +30,10 @@ export default async function RootLayout({
     <SessionProvider session={session}>
       <html lang="en">
         <body className={inter.className}>
+          <Script
+            src="https://checkout.razorpay.com/v1/checkout.js"
+            strategy="lazyOnload"
+          />
           <Providers>
             <Toaster />
             <Modals />

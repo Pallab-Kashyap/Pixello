@@ -1,9 +1,14 @@
 import { z } from "zod";
 import { Hono } from "hono";
+import { eq } from "drizzle-orm";
 import { verifyAuth } from "@hono/auth-js";
 import { zValidator } from "@hono/zod-validator";
 
 import { replicate } from "@/lib/replicate";
+import { generateImage } from "@/lib/stability";
+import { db } from "@/db/drizzle";
+import { subscriptions } from "@/db/schema";
+import { checkIsActive } from "@/features/subscriptions/lib";
 
 const app = new Hono()
   .post(
@@ -13,21 +18,53 @@ const app = new Hono()
       "json",
       z.object({
         image: z.string(),
-      }),
+      })
     ),
     async (c) => {
+      const auth = c.get("authUser");
+
+      if (!auth.token?.id) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+
+      // Check if user has an active subscription
+      const [subscription] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, auth.token.id));
+
+      const isActive = checkIsActive(subscription);
+
+      if (!isActive) {
+        return c.json(
+          { error: "Pro subscription required for background removal" },
+          403
+        );
+      }
+
       const { image } = c.req.valid("json");
 
-      const input = {
-        image: image
-      };
-    
-      const output: unknown = await replicate.run("cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003", { input });
+      try {
+        const input = {
+          image: image,
+        };
 
-      const res = output as string;
+        const output: unknown = await replicate.run(
+          "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003",
+          { input }
+        );
 
-      return c.json({ data: res });
-    },
+        const res = output as string;
+
+        return c.json({ data: res });
+      } catch (error: any) {
+        console.error("Background removal error:", error);
+        return c.json(
+          { error: error.message || "Failed to remove background" },
+          500
+        );
+      }
+    }
   )
   .post(
     "/generate-image",
@@ -36,28 +73,45 @@ const app = new Hono()
       "json",
       z.object({
         prompt: z.string(),
-      }),
+      })
     ),
     async (c) => {
+      const auth = c.get("authUser");
+
+      if (!auth.token?.id) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+
+      // Check if user has an active subscription
+      const [subscription] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, auth.token.id));
+
+      const isActive = checkIsActive(subscription);
+
+      if (!isActive) {
+        return c.json(
+          { error: "Pro subscription required for AI image generation" },
+          403
+        );
+      }
+
       const { prompt } = c.req.valid("json");
 
-      const input = {
-        cfg: 3.5,
-        steps: 28,
-        prompt: prompt,
-        aspect_ratio: "3:2",
-        output_format: "webp",
-        output_quality: 90,
-        negative_prompt: "",
-        prompt_strength: 0.85
-      };
-      
-      const output = await replicate.run("stability-ai/stable-diffusion-3", { input });
-      
-      const res = output as Array<string>;
+      try {
+        // Use Gemini for image generation
+        const imageData = await generateImage(prompt);
 
-      return c.json({ data: res[0] });
-    },
+        return c.json({ data: imageData });
+      } catch (error: any) {
+        console.error("Image generation error:", error);
+        return c.json(
+          { error: error.message || "Failed to generate image" },
+          500
+        );
+      }
+    }
   );
 
 export default app;
